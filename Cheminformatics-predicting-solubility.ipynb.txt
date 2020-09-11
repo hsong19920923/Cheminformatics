@@ -1,0 +1,116 @@
+! wget https://repo.anaconda.com/miniconda/Miniconda3-py37_4.8.2-Linux-x86_64.sh
+! chmod +x Miniconda3-py37_4.8.2-Linux-x86_64.sh
+! bash ./Miniconda3-py37_4.8.2-Linux-x86_64.sh -b -f -p /usr/local
+! conda install -c rdkit rdkit -y
+import sys
+sys.path.append('/usr/local/lib/python3.7/site-packages/')
+
+
+# ! wget https://pubs.acs.org/doi/suppl/10.1021/ci034243x/suppl_file/ci034243xsi20040112_053635.txt
+
+import pandas as pd
+
+delaney_url = 'https://raw.githubusercontent.com/dataprofessor/data/master/delaney.csv'
+sol = pd.read_csv(delaney_url)
+sol
+
+sol.SMILES
+
+sol.SMILES[1000]
+
+from rdkit import Chem
+
+Chem.MolFromSmiles(sol.SMILES[0])
+
+Chem.MolFromSmiles('ClCC(Cl)(Cl)Cl')
+
+m=Chem.MolFromSmiles('CCCC1CCCC1')
+
+m.GetNumAtoms()
+
+from rdkit import Chem
+
+mol_list=[]
+for element in sol.SMILES:
+  mol= Chem.MolFromSmiles(element)
+  mol_list.append(mol)
+
+len(mol_list)
+
+mol_list[:10]
+
+mol_list2 = [Chem.MolFromSmiles(element) for element in sol.SMILES]
+
+len(mol_list2)
+
+mol_list2[:5]
+
+import numpy as np
+from rdkit.Chem import Descriptors
+
+# Inspired by: https://codeocean.com/explore/capsules?query=tag:data-curation
+def generate(smiles, verbose=False):
+
+    moldata= []
+    for elem in smiles:
+        mol=Chem.MolFromSmiles(elem) 
+        moldata.append(mol)
+       
+    baseData= np.arange(1,1)
+    i=0  
+    for mol in moldata:        
+       
+        desc_MolLogP = Descriptors.MolLogP(mol)
+        desc_MolWt = Descriptors.MolWt(mol)
+        desc_NumRotatableBonds = Descriptors.NumRotatableBonds(mol)
+
+
+df=generate(sol.SMILES)
+df
+
+m=Chem.MolFromSmiles('COc1cccc2cc(C(=O)NCCCCN3CCN(c4cccc5nccnc54)CC3)oc21')
+
+aromatic_atoms=[m.GetAtomWithIdx(i).GetIsAromatic() for i in range(m.GetNumAtoms())]
+aromatic_atoms
+
+def AromaticAtoms(m):
+  aromatic_atoms=[m.GetAtomWithIdx(i).GetIsAromatic() for i in range(m.GetNumAtoms())]
+  for i in aromatic_atoms:
+    if i==True:
+      sum_aa_count=sum(aromatic_atoms)
+      return sum_aa_count
+
+AromaticAtoms(m)
+
+desc_AromaticAtoms=[AromaticAtoms(element) for element in mol_list]
+desc_AromaticAtoms
+
+m=Chem.MolFromSmiles('COc1cccc2cc(C(=O)NCCCCN3CCN(c4cccc5nccnc54)CC3)oc21')
+Descriptors.HeavyAtomCount(m)
+
+desc_HeavyAtomCount=[Descriptors.HeavyAtomCount(element) for element in mol_list]
+desc_HeavyAtomCount
+
+m=Chem.MolFromSmiles('COc1cccc2cc(C(=O)NCCCCN3CCN(c4cccc5nccnc54)CC3)oc21')
+AromaticAtoms(m)/Descriptors.HeavyAtomCount(m)
+
+desc_AromaticProportion=[AromaticAtoms(element)/Descriptors.HeavyAtomCount(element) for element in mol_list]
+desc_AromaticProportion
+
+        
+           
+        row = np.array([desc_MolLogP,
+                        desc_MolWt,
+                        desc_NumRotatableBonds])   
+    
+        if(i==0):
+            baseData=row
+        else:
+            baseData=np.vstack([baseData, row])
+        i=i+1      
+    
+    columnNames=["MolLogP","MolWt","NumRotatableBonds"]   
+    descriptors = pd.DataFrame(data=baseData,columns=columnNames)
+    
+    return descriptors
+
